@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, MoreHorizontal, Trash } from "lucide-react";
+import React, { useState } from "react";
+import { Plus, Edit2, MoreHorizontal, Trash, Copy } from "lucide-react";
 import './global.css';
 
 const emptyForm = {
-  mobileNumber: "",
+  incident: "",
+  username: "",
   dateReported: "",
   status: "Active",
-  officer: "",
 };
 
-const IncidentWhatsApp = () => {
-  // State Management
+export default function IncidentTelegram() {
   const [rows, setRows] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [editingIndex, setEditingIndex] = useState(null);
   const [menuIndex, setMenuIndex] = useState(null);
@@ -29,16 +28,17 @@ const IncidentWhatsApp = () => {
   const resolvedCount = rows.filter(r => r.status === "Resolved").length;
 
   // --- Handlers ---
+
   const openCreate = () => {
     setFormData(emptyForm);
     setEditingIndex(null);
-    setIsModalOpen(true);
+    setIsOpen(true);
   };
 
   const openEdit = (index) => {
     setFormData(rows[index]);
     setEditingIndex(index);
-    setIsModalOpen(true);
+    setIsOpen(true);
     setMenuIndex(null);
   };
 
@@ -50,12 +50,17 @@ const IncidentWhatsApp = () => {
     } else {
       setRows([...rows, formData]);
     }
-    setIsModalOpen(false);
+    setIsOpen(false);
     setFormData(emptyForm);
   };
 
   const handleDelete = (index) => {
     setRows(rows.filter((_, i) => i !== index));
+    setMenuIndex(null);
+  };
+
+  const handleDuplicate = (index) => {
+    setRows([...rows, { ...rows[index] }]);
     setMenuIndex(null);
   };
 
@@ -68,12 +73,17 @@ const IncidentWhatsApp = () => {
   };
 
   const filteredRows = rows.filter(row => {
-    const matchesSearch = row.mobileNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    // 1. Search Check (Incident or Username)
+    const matchesSearch = 
+      row.incident.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.username.toLowerCase().includes(searchTerm.toLowerCase());
 
+    // 2. Date Check
     const matchesDate = appliedFilters.date 
       ? row.dateReported === appliedFilters.date 
       : true;
 
+    // 3. Status Check
     const matchesStatus = appliedFilters.status 
       ? row.status === appliedFilters.status 
       : true;
@@ -87,14 +97,15 @@ const IncidentWhatsApp = () => {
       <div className="header-section">
         <div className="icon-wrapper">
           <div className="chat-icon">
-            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H6L4 18V4H20V16Z" fill="white"/>
+            {/* Telegram Logo SVG */}
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21.68 3.32a2.3 2.3 0 0 0-2.35-.38l-17 6.6a2.3 2.3 0 0 0 .1 4.28l4.9 1.52 1.9 5.7a1.2 1.2 0 0 0 2.2 0l2.3-4.1 6.3 4.6a2.3 2.3 0 0 0 3.7-1.7V4.3a2.3 2.3 0 0 0-.35-1zM6.9 14.6l12.1-8.1-10 9.7z" fill="white"/>
             </svg>
           </div>
         </div>
         <div className="header-text">
-          <h1>WhatsApp Incidents</h1>
-          <p>{rows.length} incidents found</p>
+          <h1>Telegram Incidents</h1>
+          <p>{rows.length} records found</p>
         </div>
       </div>
 
@@ -137,25 +148,25 @@ const IncidentWhatsApp = () => {
             <option value="Pending">Pending</option>
             <option value="Resolved">Resolved</option>
           </select>
-
+          
           <button className="btn-primary" onClick={handleApplyFilters}>Apply Filters</button>
         </div>
-        
+
         {/* Middle: Search */}
         <div className="center-actions">
-          <input 
-            type="text" 
-            placeholder="Search Mobile Number" 
-            className="search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+           <input 
+              type="text" 
+              placeholder="Search Incident or Username" 
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+           />
         </div>
 
         {/* Right: Add Button */}
         <div className="right-actions">
           <button className="btn-primary" onClick={openCreate}>
-            <Plus size={18} /> Add New Incident
+            <Plus size={18} /> Add New
           </button>
         </div>
       </div>
@@ -163,22 +174,23 @@ const IncidentWhatsApp = () => {
       {/* 4. Table Section */}
       <div className="table-container">
         <div className="table-header">
-          <div className="th-cell col-wa-no">No</div>
-          <div className="th-cell col-wa-mobile">Mobile Number</div>
-          <div className="th-cell col-wa-date">Date Reported</div>
-          <div className="th-cell col-wa-status">Status</div>
-          <div className="th-cell col-wa-officer">Officer</div>
-          <div className="th-cell col-wa-action">Action</div>
+          <div className="th-cell col-tg-no">No.</div>
+          <div className="th-cell col-tg-incident">Incident</div>
+          <div className="th-cell col-tg-username">Username</div>
+          <div className="th-cell col-tg-date">Date Reported</div>
+          <div className="th-cell col-tg-status">Status</div>
+          <div className="th-cell col-tg-action">Action</div>
         </div>
-        
+
         {/* Table Body */}
         {filteredRows.length > 0 ? (
           filteredRows.map((row, i) => (
             <div key={i} className="table-row">
-              <div className="td-cell col-wa-no">{i + 1}</div>
-              <div className="td-cell col-wa-mobile">{row.mobileNumber}</div>
-              <div className="td-cell col-wa-date">{row.dateReported}</div>
-              <div className="td-cell col-wa-status">
+              <div className="td-cell col-tg-no">{i + 1}</div>
+              <div className="td-cell col-tg-incident">{row.incident}</div>
+              <div className="td-cell col-tg-username">{row.username}</div>
+              <div className="td-cell col-tg-date">{row.dateReported}</div>
+              <div className="td-cell col-tg-status">
                 <span className={`status-badge ${
                     row.status === "Active" ? "status-active" : 
                     row.status === "Pending" ? "status-pending" : "status-resolved"
@@ -186,9 +198,8 @@ const IncidentWhatsApp = () => {
                   {row.status}
                 </span>
               </div>
-              <div className="td-cell col-wa-officer">{row.officer}</div>
               
-              <div className="td-cell col-wa-action relative">
+              <div className="td-cell col-tg-action relative">
                 <div className="action-btn-group">
                   <button onClick={() => openEdit(i)} className="icon-btn">
                     <Edit2 size={16} />
@@ -201,6 +212,9 @@ const IncidentWhatsApp = () => {
                 {/* Dropdown Menu */}
                 {menuIndex === i && (
                   <div className="dropdown-menu">
+                    <button onClick={() => handleDuplicate(i)} className="dropdown-item">
+                      <Copy size={14} /> Duplicate
+                    </button>
                     <button onClick={() => handleDelete(i)} className="dropdown-item danger">
                       <Trash size={14} /> Delete
                     </button>
@@ -210,26 +224,32 @@ const IncidentWhatsApp = () => {
             </div>
           ))
         ) : (
-          <div className="table-body-empty">No incidents found.</div>
+          <div className="table-body-empty">No records found</div>
         )}
       </div>
 
-      {/* --- POP-UP MODAL START --- */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+      {/* --- POP-UP MODAL --- */}
+      {isOpen && (
+        <div className="modal-overlay" onClick={() => setIsOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">
-              {editingIndex !== null ? "Edit Incident" : "Add New Incident"}
-            </h2>
+            <h2 className="modal-title">{editingIndex !== null ? "Edit Incident" : "Add New Incident"}</h2>
             
             <div className="modal-form">
               <div className="form-group">
-                <label>Mobile Number</label>
+                <label>Incident</label>
                 <input 
-                  type="text" 
                   placeholder="Value" 
-                  value={formData.mobileNumber}
-                  onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                  value={formData.incident} 
+                  onChange={(e) => setFormData({ ...formData, incident: e.target.value })} 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Username</label>
+                <input 
+                  placeholder="Value" 
+                  value={formData.username} 
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })} 
                 />
               </div>
 
@@ -237,15 +257,15 @@ const IncidentWhatsApp = () => {
                 <label>Date Reported</label>
                 <input 
                   type="date" 
-                  value={formData.dateReported}
-                  onChange={(e) => setFormData({ ...formData, dateReported: e.target.value })}
+                  value={formData.dateReported} 
+                  onChange={(e) => setFormData({ ...formData, dateReported: e.target.value })} 
                 />
               </div>
 
               <div className="form-group">
                 <label>Status</label>
                 <select 
-                  value={formData.status}
+                  value={formData.status} 
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
                   <option value="Active">Active</option>
@@ -254,27 +274,14 @@ const IncidentWhatsApp = () => {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Officer</label>
-                <input 
-                  type="text" 
-                  placeholder="Value" 
-                  value={formData.officer}
-                  onChange={(e) => setFormData({ ...formData, officer: e.target.value })}
-                />
-              </div>
-
               <div className="modal-actions">
-                 <button className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                 <button className="btn-add" onClick={handleSubmit}>Save</button>
+                <button onClick={() => setIsOpen(false)} className="btn-cancel">Cancel</button>
+                <button onClick={handleSubmit} className="btn-add">Save</button>
               </div>
             </div>
           </div>
         </div>
       )}
-      {/* --- POP-UP MODAL END --- */}
     </div>
   );
-};
-
-export default IncidentWhatsApp;
+}
